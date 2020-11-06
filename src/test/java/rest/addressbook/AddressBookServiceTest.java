@@ -1,6 +1,7 @@
 package rest.addressbook;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 
 import java.io.IOException;
@@ -52,6 +53,20 @@ public class AddressBookServiceTest {
     // Verify that GET /contacts is well implemented by the service, i.e
     // complete the test to ensure that it is safe and idempotent
     //////////////////////////////////////////////////////////////////////
+    //  1.) If we are making GET petitions, -safe condition- is assured when
+    //  two diferent petitions dont change the state of the server -> size of 
+    //  Person List must be 0 if we make an other petition (replicate previous petition)
+    //
+    //  2.) Idempotent means that two GET petitons that are consecutive must return the same results
+
+    //1
+    Response response2 = client.target("http://localhost:8282/contacts")
+      .request().get();
+    assertEquals(0, response2.readEntity(AddressBook.class).getPersonList()
+      .size());
+
+    //2
+    assertEquals(response.getStatus(),response2.getStatus());
   }
 
   @Test
@@ -93,7 +108,27 @@ public class AddressBookServiceTest {
     // Verify that POST /contacts is well implemented by the service, i.e
     // complete the test to ensure that it is not safe and not idempotent
     //////////////////////////////////////////////////////////////////////
+    //  1.) If we are making POST petitions, -NOT safe condition- is assured when
+    //  two diferent petitions DO change the state of the server -> add the same person
+    //  changes the state (replicate previous petition)
+    //
+    //  2.) NOT Idempotent means that the result of two petitons is not the same by adding the same person again
 
+    //  1)
+    Response response2 = client.target("http://localhost:8282/contacts")
+      .request(MediaType.APPLICATION_JSON)
+      .post(Entity.entity(juan, MediaType.APPLICATION_JSON));
+
+    assertEquals(201, response2.getStatus());
+
+    //  2) 
+    Person juan2 = response2.readEntity(Person.class);
+    assertNotEquals(juan.getId(),juan2.getId());
+    // We added the same person so the size of the PersonList must be 1 -> ERROR its 2
+    // Check that the new user exists
+    response2 = client.target("http://localhost:8282/contacts").request().get();
+    assertEquals(2, response2.readEntity(AddressBook.class).getPersonList()
+      .size());
   }
 
   @Test
@@ -148,7 +183,14 @@ public class AddressBookServiceTest {
     // Verify that GET /contacts/person/3 is well implemented by the service, i.e
     // complete the test to ensure that it is safe and idempotent
     //////////////////////////////////////////////////////////////////////
-
+    // Same method than on first test
+    // safe -> no server status change
+    Response response2 = client.target("http://localhost:8282/contacts/person/3")
+      .request(MediaType.APPLICATION_JSON).get();
+      assertEquals(response.getStatus(),response2.getStatus());
+    // idempotent -> 2 reponses sames results -> same ID's on the server
+    Person maria_aux = response2.readEntity(Person.class);
+    assertEquals(mariaUpdated.getId(),maria_aux.getId());
   }
 
   @Test
@@ -180,6 +222,16 @@ public class AddressBookServiceTest {
     // Verify that GET /contacts is well implemented by the service, i.e
     // complete the test to ensure that it is safe and idempotent
     //////////////////////////////////////////////////////////////////////
+    // Same method than on first test
+    // safe -> no server status change
+    Response response2 = client.target("http://localhost:8282/contacts")
+      .request(MediaType.APPLICATION_JSON).get();
+      assertEquals(response.getStatus(),response2.getStatus());
+    // idempotent -> 2 reponses same results -> same size of list on the server
+    AddressBook addressBookRetrieved2 = response2
+      .readEntity(AddressBook.class);
+    assertEquals(2, addressBookRetrieved2.getPersonList().size());
+
 
   }
 
@@ -233,7 +285,10 @@ public class AddressBookServiceTest {
     // Verify that PUT /contacts/person/2 is well implemented by the service, i.e
     // complete the test to ensure that it is idempotent but not safe
     //////////////////////////////////////////////////////////////////////
-
+    // Status has not changed
+    assertEquals(2,ab.getPersonList().size());
+    // PUT petition has changed the information on server
+    assertNotEquals(juan.getName(),ab.getPersonList().get(1).getName());
   }
 
   @Test
@@ -266,7 +321,10 @@ public class AddressBookServiceTest {
     // Verify that DELETE /contacts/person/2 is well implemented by the service, i.e
     // complete the test to ensure that it is idempotent but not safe
     //////////////////////////////////////////////////////////////////////
-
+    // Trying to delete the same user again on new response -> ERROR 404
+    Response response2 = client.target("http://localhost:8282/contacts/person/2")
+      .request().delete();
+    assertEquals(response.getStatus(), response2.getStatus());
   }
 
   @Test

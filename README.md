@@ -41,4 +41,6 @@ If you desist of your goal, release it by a PR so other fellow can try it.
 
 | NIA    | User name | Repo | Build Status | Improvement | Score
 |--------|-----------|------|--------------|-------------|--------
-|        |           |      |              |             |
+| 757153|   [Fran-sw](https://github.com/Fran-sw) |[lab3-resful-ws](https://github.com/Fran-sw/lab3-resful-ws)      |[![Build Status](https://travis-ci.com/Fran-sw/lab3-resful-ws.svg)](https://travis-ci.com/Fran-sw/lab3-resful-ws)       | |                      |
+
+
